@@ -1,0 +1,107 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background: #f0f4f8;
+  color: #333;
+}
+
+/* HOME */
+.home {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  text-align: center;
+}
+
+.home h1 { font-size: 2.5rem; color: #0078d4; margin-bottom: 10px; }
+.home .subtitle { color: #666; margin-bottom: 50px; font-size: 1.1rem; }
+
+.home-buttons { display: flex; gap: 20px; }
+.home-btn {
+  padding: 18px 50px;
+  font-size: 1.1rem;
+  background: #0078d4;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.home-btn:hover { background: #006cbd; }
+
+/* PAGES */
+.page {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 30px 20px;
+}
+
+.page h1 { font-size: 1.8rem; color: #0078d4; margin-bottom: 20px; }
+
+.back-btn {
+  background: none;
+  border: none;
+  color: #0078d4;
+  cursor: pointer;
+  font-size: 14px;
+  margin-bottom: 15px;
+  padding: 0;
+}
+
+.card {
+  background: white;
+  border-radius: 10px;
+  padding: 25px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+h2 { margin-bottom: 15px; color: #0078d4; }
+
+.hint { color: #666; font-size: 14px; margin-bottom: 15px; }
+
+input, textarea {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+textarea { resize: vertical; min-height: 80px; }
+textarea.output { min-height: 200px; background: #f9f9f9; margin-top: 15px; }
+
+.attendee {
+  border: 1px solid #eee;
+  border-radius: 6px;
+  padding: 15px;
+  margin-bottom: 10px;
+}
+
+button { cursor: pointer; border: none; border-radius: 6px; padding: 10px 20px; font-size: 14px; margin-right: 10px; margin-top: 5px; }
+button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.primary { background: #0078d4; color: white; }
+.primary:hover:not(:disabled) { background: #006cbd; }
+.secondary { background: #e8f0fe; color: #0078d4; }
+.secondary:hover { background: #d0e3fa; }
+.full { width: 100%; margin-top: 10px; padding: 14px; font-size: 1rem; }
+
+.customer-list { display: flex; flex-direction: column; gap: 10px; }
+.customer-btn {
+  background: white;
+  border: 2px solid #0078d4 !important;
+  color: #0078d4;
+  padding: 15px;
+  border-radius: 8px;
+  text-align: left;
+  font-size: 1rem;
+  width: 100%;
+  margin: 0;
+}
+.customer-btn:hover { background: #e8f0fe; }
