@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 require('dotenv').config();
 const { connectDB, sql } = require('./database');
 const { saveEvent, saveAttendees, saveNotes, saveGeneratedContent, getEvent } = require('./queries');
@@ -8,6 +9,7 @@ const { generateContent } = require('./foundry');
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use(express.static(path.join(__dirname, '../client/build')));
 
 // Get all events
 app.get('/api/events', async (req, res) => {
@@ -97,6 +99,11 @@ Include: thanks, 3 key takeaways, next steps. Keep it concise.`;
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+// Serve React frontend for all other routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../client/build/index.html'));
 });
 
 const PORT = process.env.PORT || 3001;
