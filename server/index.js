@@ -55,12 +55,7 @@ app.post('/api/attendees', async (req, res) => {
 app.post('/api/generate-narrative', async (req, res) => {
   try {
     const { event, attendees } = req.body;
-    const prompt = `Microsoft EBC event planning. Company: ${event.companyName}, Industry: ${event.industry}, Goal: ${event.goal}, Attendees: ${attendees.map(a => a.role).join(', ')}.
-
-Write briefly:
-1. A 3 sentence day narrative
-2. 4 suggested sessions (one line each) covering AI, cybersecurity, cloud & data`;
-
+    const prompt = `EBC event for ${event.companyName} (${event.industry}). Goal: ${event.goal}. Attendees: ${attendees.map(a => a.role).join(', ')}. Write: 1) 2 sentence narrative 2) 3 session titles for AI, security, cloud.`;
     const content = await generateContent(prompt);
     await saveGeneratedContent(event.id, 'narrative', content);
     res.json({ content });
@@ -76,7 +71,6 @@ app.post('/api/generate-agenda-email', async (req, res) => {
     const prompt = `Write a short professional agenda email for a Microsoft Executive Briefing event.
 Company: ${event.companyName}, Industry: ${event.industry}, Goal: ${event.goal}, Attendees: ${attendees.map(a => `${a.name} (${a.role})`).join(', ')}.
 Include: brief welcome, 4 agenda items, closing. Keep it concise.`;
-
     const content = await generateContent(prompt);
     await saveGeneratedContent(event.id, 'agenda-email', content);
     res.json({ content });
@@ -92,9 +86,62 @@ app.post('/api/generate-email', async (req, res) => {
     const prompt = `Write a short professional follow-up email after a Microsoft Executive Briefing.
 Company: ${event.companyName}, Notes: ${notes}.
 Include: thanks, 3 key takeaways, next steps. Keep it concise.`;
-
     const content = await generateContent(prompt);
     await saveGeneratedContent(event.id, 'email', content);
+    res.json({ content });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get insights data
+app.get('/api/insights', async (req, res) => {
+  try {
+    const events = await sql.query`SELECT opportunities, goal, industry FROM events`;
+    const attendees = await sql.query`SELECT role, priorities FROM attendees`;
+
+    const keywords = ['AI', 'Security', 'Cloud', 'Data', 'Copilot'];
+    const keywordCounts = {};
+    keywords.forEach(k => keywordCounts[k] = 0);
+
+    events.recordset.forEach(e => {
+      const text = `${e.opportunities} ${e.goal}`.toLowerCase();
+      keywords.forEach(k => {
+        if (text.includes(k.toLowerCase())) keywordCounts[k]++;
+      });
+    });
+
+    const roleCounts = {};
+    attendees.recordset.forEach(a => {
+      if (!a.role) return;
+      const role = a.role.trim();
+      if (!roleCounts[role]) roleCounts[role] = { role, keywords: {} };
+      keywords.forEach(k => {
+        if (!roleCounts[role].keywords[k]) roleCounts[role].keywords[k] = 0;
+        if (a.priorities?.toLowerCase().includes(k.toLowerCase())) {
+          roleCounts[role].keywords[k]++;
+        }
+      });
+    });
+
+    res.json({
+      keywordCounts,
+      roleInsights: Object.values(roleCounts),
+      totalEvents: events.recordset.length,
+      industries: [...new Set(events.recordset.map(e => e.industry).filter(Boolean))]
+    });
+  } catch (err) {
+    console.error('Insights error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Query insights with AI
+app.post('/api/insights-query', async (req, res) => {
+  try {
+    const { question, industry } = req.body;
+    const prompt = `You are a Microsoft EBC advisor. Answer this question about Executive Briefing Centre trends: "${question}" ${industry ? `Focus on the ${industry} industry.` : ''} Keep your answer concise and practical.`;
+    const content = await generateContent(prompt);
     res.json({ content });
   } catch (err) {
     res.status(500).json({ error: err.message });

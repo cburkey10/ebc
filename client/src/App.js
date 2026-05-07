@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import './App.css';
 
-const API = 'http://localhost:3001';
+const API = '';
 
 // HOME PAGE
 function Home() {
@@ -15,6 +15,7 @@ function Home() {
         <button className="home-btn" onClick={() => navigate('/plan')}>Plan</button>
         <button className="home-btn" onClick={() => navigate('/followup')}>Follow Up</button>
       </div>
+      <button className="ideas-btn" onClick={() => navigate('/ideas')}>💡 Get Ideas for your next EBC</button>
     </div>
   );
 }
@@ -263,6 +264,127 @@ function FollowUpNotes() {
   );
 }
 
+// GET IDEAS PAGE
+function GetIdeas() {
+  const navigate = useNavigate();
+  const [insights, setInsights] = React.useState(null);
+  const [question, setQuestion] = React.useState('');
+  const [industry, setIndustry] = React.useState('');
+  const [answer, setAnswer] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+  const [chartLoading, setChartLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    fetch(`${API}/api/insights`)
+      .then(r => r.json())
+      .then(data => { setInsights(data); setChartLoading(false); })
+      .catch(() => setChartLoading(false));
+  }, []);
+
+  const askAI = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${API}/api/insights-query`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question, industry })
+      });
+      const data = await res.json();
+      setAnswer(data.content);
+    } catch (err) {
+      alert('Error querying AI.');
+    }
+    setLoading(false);
+  };
+
+  const keywords = ['AI', 'Security', 'Cloud', 'Data', 'Copilot'];
+  const colors = ['#0078d4', '#d13438', '#107c10', '#8764b8', '#038387'];
+  const maxCount = insights ? Math.max(...Object.values(insights.keywordCounts), 1) : 1;
+
+  return (
+    <div className="page">
+      <button className="back-btn" onClick={() => navigate('/')}>← Back</button>
+      <h1>Get Ideas for Your Next EBC</h1>
+      <p className="hint" style={{marginBottom: '20px'}}>Based on {insights?.totalEvents || 0} EBCs in your database</p>
+
+      <div className="card">
+        <h2>What Customers Are Interested In</h2>
+        {chartLoading ? <p>Loading...</p> : (
+          <div className="chart">
+            {keywords.map((k, i) => (
+              <div key={k} className="chart-row">
+                <div className="chart-label">{k}</div>
+                <div className="chart-bar-container">
+                  <div
+                    className="chart-bar"
+                    style={{
+                      width: `${((insights?.keywordCounts[k] || 0) / maxCount) * 100}%`,
+                      background: colors[i]
+                    }}
+                  />
+                  <span className="chart-count">{insights?.keywordCounts[k] || 0}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="card">
+        <h2>What Different Roles Care About</h2>
+        {chartLoading ? <p>Loading...</p> : (
+          <div className="role-grid">
+            {insights?.roleInsights?.length === 0 && <p>No attendee data yet.</p>}
+            {insights?.roleInsights?.map((r, i) => (
+              <div key={i} className="role-card">
+                <h3>{r.role}</h3>
+                <div className="role-bars">
+                  {keywords.map((k, j) => r.keywords[k] > 0 && (
+                    <div key={k} className="role-tag" style={{background: colors[j]}}>
+                      {k}: {r.keywords[k]}
+                    </div>
+                  ))}
+                  {Object.values(r.keywords).every(v => v === 0) && (
+                    <p style={{fontSize: '12px', color: '#666'}}>No keyword matches yet</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="card">
+        <h2>Ask About EBC Trends</h2>
+        <p className="hint">Ask anything about what works well for specific industries or roles.</p>
+        {insights?.industries?.length > 0 && (
+          <select value={industry} onChange={e => setIndustry(e.target.value)} style={{width:'100%', padding:'10px', marginBottom:'10px', borderRadius:'6px', border:'1px solid #ddd'}}>
+            <option value="">All industries</option>
+            {insights.industries.map(ind => (
+              <option key={ind} value={ind}>{ind}</option>
+            ))}
+          </select>
+        )}
+        <textarea
+          placeholder="e.g. What topics resonate most with CTOs in retail? What should I focus on for a financial services EBC?"
+          value={question}
+          onChange={e => setQuestion(e.target.value)}
+          rows={4}
+        />
+        <button className="primary" onClick={askAI} disabled={loading || !question}>
+          {loading ? 'Thinking...' : 'Ask AI'}
+        </button>
+        {answer && (
+          <>
+            <textarea readOnly value={answer} rows={8} className="output" />
+            <button className="secondary" onClick={() => navigator.clipboard.writeText(answer)}>Copy</button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // APP ROUTER
 export default function App() {
   return (
@@ -274,6 +396,7 @@ export default function App() {
         <Route path="/plan/email" element={<PlanEmail />} />
         <Route path="/followup" element={<FollowUpSelect />} />
         <Route path="/followup/notes" element={<FollowUpNotes />} />
+        <Route path="/ideas" element={<GetIdeas />} />
       </Routes>
     </Router>
   );

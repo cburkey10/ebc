@@ -8,7 +8,7 @@ async function generateContent(prompt) {
       {
         model: "Phi-4-mini-instruct",
         messages: [{ role: "user", content: prompt }],
-        max_tokens: 500
+        max_tokens: 300
       },
       {
         headers: {
